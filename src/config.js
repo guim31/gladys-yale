@@ -1,45 +1,72 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
+// Integration configuration: defaults (they mirror the `default` values of the
+// manifest `config_schema`, see test/manifest.test.js) and normalization, so
+// the rest of the code never deals with strings, blanks or `undefined`.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// The password and the application key are `secret` fields: Gladys never
+// sends them back to the browser. The token the sign-in gives lives in /data
+// (src/store.js), never in the configuration.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+import { BRAND_KEYS } from './yale/brands.js';
+import { LOGIN_METHODS } from './yale/client.js';
+
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+// Minutes between two reads of the locks. The real-time stream brings the
+// operations as they happen; the reads catch what it missed, the batteries
+// and the bridge. While the stream is up, the reads slow down to
+// STREAM_REFRESH_MS. Values stored in the configuration: never change one.
+export const REFRESH_INTERVALS = ['1', '5', '15', '30'];
+
+export const STREAM_REFRESH_MS = 30 * 60_000;
+
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  brand: 'yale_home',
+  login_method: 'email',
+  allow_unlock: false,
+  refresh_interval: '5',
+  language: 'fr',
 };
 
+const pickOption = (value, options, fallback) =>
+  options.includes(String(value ?? '')) ? String(value) : fallback;
+
+// A boolean field may arrive as a string from older form engines.
+const flag = (value, fallback) =>
+  value === undefined || value === null || value === ''
+    ? fallback
+    : value === true || value === 'true';
+
+const text = (value) => (typeof value === 'string' ? value.trim() : '');
+
+/** "+33 6 12 34 56 78" → "+33612345678"; an address is kept as typed, trimmed. */
+export function normalizeUsername(value, method) {
+  const raw = text(value);
+  return method === 'phone' ? raw.replace(/[\s().-]/g, '') : raw;
+}
+
 /**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} raw the configuration returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const loginMethod = pickOption(source.login_method, LOGIN_METHODS, DEFAULT_CONFIG.login_method);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    brand: pickOption(source.brand, BRAND_KEYS, DEFAULT_CONFIG.brand),
+    loginMethod,
+    username: normalizeUsername(source.username, loginMethod),
+    password: typeof source.password === 'string' ? source.password : '',
+    apiKey: text(source.api_key),
+    allowUnlock: flag(source.allow_unlock, DEFAULT_CONFIG.allow_unlock),
+    refreshMs:
+      Number(
+        pickOption(source.refresh_interval, REFRESH_INTERVALS, DEFAULT_CONFIG.refresh_interval),
+      ) * 60_000,
+    language: pickOption(source.language, LANGUAGES, DEFAULT_CONFIG.language),
   };
 }
+
+/** The values that identify the account: when one changes, the saved sign-in is dropped. */
+export const accountOf = (config) =>
+  JSON.stringify([config.brand, config.loginMethod, config.username.toLowerCase(), config.apiKey]);

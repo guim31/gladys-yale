@@ -1,177 +1,974 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Yale Home",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Yale and August smart locks over the Yale Home cloud: state, door, battery, locking.",
+    "fr": "Serrures connectées Yale et August via le cloud Yale Home : état, porte, batterie, verrouillage.",
+    "de": "Yale- und August-Smart-Locks über die Yale-Home-Cloud: Zustand, Tür, Batterie, Verriegeln.",
+    "es": "Cerraduras Yale y August por la nube Yale Home: estado, puerta, batería, bloqueo."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-yale:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-yale/main/cover.png",
+  "categories": ["security"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Before you start",
+        "fr": "Avant de commencer",
+        "de": "Bevor du loslegst",
+        "es": "Antes de empezar"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "This integration signs in to the Yale Home (or August / Yale Access) cloud like the app, with the same e-mail address and password, and follows your locks: bolt, door (DoorSense), battery, who operated them and how. The lock needs a bridge (Connect, or Wi-Fi built in) to be reached remotely. Important: the Yale cloud may refuse the application key this integration uses, whatever your account; if so, the status says it (see Limits in the guide). Developed without the hardware: feedback welcome. Not affiliated with Yale, August or ASSA ABLOY.",
+        "fr": "Cette intégration se connecte au cloud Yale Home (ou August / Yale Access) comme l'application, avec la même adresse e-mail et le même mot de passe, et suit vos serrures : pêne, porte (DoorSense), batterie, qui les a manœuvrées et comment. La serrure a besoin d'un pont (Connect, ou Wi-Fi intégré) pour être jointe à distance. Important : le cloud Yale peut refuser la clé d'application qu'utilise cette intégration, quel que soit votre compte ; le statut le dit alors (voir Limites dans le guide). Développée sans le matériel : retours bienvenus. Sans lien avec Yale, August ni ASSA ABLOY.",
+        "de": "Diese Integration meldet sich wie die App bei der Yale-Home-Cloud (oder August / Yale Access) an, mit derselben E-Mail-Adresse und demselben Passwort, und verfolgt deine Schlösser: Riegel, Tür (DoorSense), Batterie, wer sie wie bedient hat. Das Schloss braucht eine Bridge (Connect oder eingebautes WLAN), um aus der Ferne erreichbar zu sein. Wichtig: Die Yale-Cloud kann den App-Schlüssel dieser Integration ablehnen, egal welches Konto; dann sagt es der Status (siehe Grenzen in der Anleitung). Ohne die Hardware entwickelt: Rückmeldungen willkommen. Nicht mit Yale, August oder ASSA ABLOY verbunden.",
+        "es": "Esta integración inicia sesión en la nube Yale Home (o August / Yale Access) como la aplicación, con el mismo correo y la misma contraseña, y sigue sus cerraduras: pestillo, puerta (DoorSense), batería, quién las accionó y cómo. La cerradura necesita un puente (Connect, o Wi-Fi integrado) para ser accesible a distancia. Importante: la nube de Yale puede rechazar la clave de aplicación que usa esta integración, sea cual sea su cuenta; el estado lo indica entonces (vea Límites en la guía). Desarrollada sin el hardware: se agradecen sus comentarios. Sin relación con Yale, August ni ASSA ABLOY."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-yale/blob/main/docs/en.md",
+          "label": {
+            "en": "Step-by-step guide",
+            "fr": "Guide pas à pas",
+            "de": "Schritt-für-Schritt-Anleitung",
+            "es": "Guía paso a paso"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "account",
+      "type": "section",
+      "label": {
+        "en": "Account",
+        "fr": "Compte",
+        "de": "Konto",
+        "es": "Cuenta"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "1. Choose the app you use, fill in the e-mail address (or phone number) and password of that app, then save.\n2. The first time, the cloud wants this Gladys validated: click “Send the code” at the bottom of this page; a code arrives by e-mail or SMS.\n3. Type it in “Enter the code”. The status then shows your locks. No new code is needed after a restart.",
+        "fr": "1. Choisissez l'application que vous utilisez, renseignez l'adresse e-mail (ou le numéro de téléphone) et le mot de passe de cette application, puis enregistrez.\n2. La première fois, le cloud veut valider ce Gladys : cliquez sur « Envoyer le code » en bas de cette page ; un code arrive par e-mail ou SMS.\n3. Saisissez-le dans « Saisir le code ». Le statut affiche alors vos serrures. Aucun nouveau code n'est nécessaire après un redémarrage.",
+        "de": "1. Wähle die App, die du nutzt, gib E-Mail-Adresse (oder Telefonnummer) und Passwort dieser App ein und speichere.\n2. Beim ersten Mal will die Cloud dieses Gladys bestätigen: Klicke unten auf dieser Seite auf „Code senden“; ein Code kommt per E-Mail oder SMS.\n3. Gib ihn unter „Code eingeben“ ein. Der Status zeigt dann deine Schlösser. Nach einem Neustart ist kein neuer Code nötig.",
+        "es": "1. Elija la aplicación que usa, introduzca el correo (o el número de teléfono) y la contraseña de esa aplicación y guarde.\n2. La primera vez, la nube quiere validar este Gladys: pulse «Enviar el código» al final de esta página; llega un código por correo o SMS.\n3. Introdúzcalo en «Introducir el código». El estado muestra entonces sus cerraduras. No hace falta un código nuevo tras un reinicio."
+      }
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
+      "key": "brand",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "App",
+        "fr": "Application",
+        "de": "App",
+        "es": "Aplicación"
+      },
+      "description": {
+        "en": "Yale Home: Europe and the rest of the world. Yale Access and August: United States (August cloud).",
+        "fr": "Yale Home : Europe et reste du monde. Yale Access et August : États-Unis (cloud August).",
+        "de": "Yale Home: Europa und der Rest der Welt. Yale Access und August: USA (August-Cloud).",
+        "es": "Yale Home: Europa y resto del mundo. Yale Access y August: Estados Unidos (nube August)."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "yale_home",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "yale_home",
+          "label": {
+            "en": "Yale Home",
+            "fr": "Yale Home",
+            "de": "Yale Home",
+            "es": "Yale Home"
+          }
+        },
+        {
+          "value": "yale_access",
+          "label": {
+            "en": "Yale Access (United States)",
+            "fr": "Yale Access (États-Unis)",
+            "de": "Yale Access (USA)",
+            "es": "Yale Access (Estados Unidos)"
+          }
+        },
+        {
+          "value": "august",
+          "label": {
+            "en": "August (United States)",
+            "fr": "August (États-Unis)",
+            "de": "August (USA)",
+            "es": "August (Estados Unidos)"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "key": "login_method",
+      "type": "select",
+      "label": {
+        "en": "Sign in with",
+        "fr": "Se connecter avec",
+        "de": "Anmelden mit",
+        "es": "Iniciar sesión con"
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "email",
+      "options": [
+        {
+          "value": "email",
+          "label": {
+            "en": "E-mail address",
+            "fr": "Adresse e-mail",
+            "de": "E-Mail-Adresse",
+            "es": "Correo electrónico"
+          }
+        },
+        {
+          "value": "phone",
+          "label": {
+            "en": "Phone number",
+            "fr": "Numéro de téléphone",
+            "de": "Telefonnummer",
+            "es": "Número de teléfono"
+          }
+        }
+      ]
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "E-mail address or phone number",
+        "fr": "Adresse e-mail ou numéro de téléphone",
+        "de": "E-Mail-Adresse oder Telefonnummer",
+        "es": "Correo o número de teléfono"
+      },
+      "description": {
+        "en": "The one of the app account. A phone number starts with + and the country code.",
+        "fr": "Celle du compte de l'application. Un numéro commence par + et l'indicatif du pays.",
+        "de": "Die des App-Kontos. Eine Telefonnummer beginnt mit + und der Landesvorwahl.",
+        "es": "La de la cuenta de la aplicación. Un número empieza por + y el prefijo del país."
+      },
+      "placeholder": {
+        "en": "name@example.com or +33612345678",
+        "fr": "nom@exemple.fr ou +33612345678",
+        "de": "name@beispiel.de oder +49151…",
+        "es": "nombre@ejemplo.es o +34612…"
+      },
+      "required": false
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "description": {
+        "en": "The password of the app. Gladys never shows it again; the integration keeps only the token it gives.",
+        "fr": "Le mot de passe de l'application. Gladys ne le réaffiche jamais ; l'intégration ne garde que le jeton obtenu.",
+        "de": "Das Passwort der App. Gladys zeigt es nie wieder an; die Integration behält nur das erhaltene Token.",
+        "es": "La contraseña de la aplicación. Gladys no la vuelve a mostrar; la integración solo guarda el token obtenido."
+      },
+      "required": false
+    },
+    {
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "Application key (advanced)",
+        "fr": "Clé d'application (avancé)",
+        "de": "App-Schlüssel (erweitert)",
+        "es": "Clave de aplicación (avanzado)"
+      },
+      "description": {
+        "en": "Leave empty to use the key of the app. Only if you hold another key issued by Yale.",
+        "fr": "Laissez vide pour utiliser la clé de l'application. Seulement si vous détenez une autre clé fournie par Yale.",
+        "de": "Leer lassen, um den Schlüssel der App zu nutzen. Nur wenn du einen anderen, von Yale ausgegebenen Schlüssel hast.",
+        "es": "Déjelo vacío para usar la clave de la aplicación. Solo si tiene otra clave emitida por Yale."
+      },
+      "required": false
+    },
+    {
+      "key": "security",
+      "type": "section",
+      "label": {
+        "en": "Security",
+        "fr": "Sécurité",
+        "de": "Sicherheit",
+        "es": "Seguridad"
+      },
+      "description": {
+        "en": "Gladys can always lock. Unlocking is off by default: once allowed, anyone using your Gladys dashboards or scenes can open the door. A lock is never a switch in Gladys: no voice command, no “turn off everything” scene can unlock it.",
+        "fr": "Gladys peut toujours verrouiller. Le déverrouillage est désactivé par défaut : une fois autorisé, quiconque utilise vos tableaux de bord ou scènes Gladys peut ouvrir la porte. Une serrure n'est jamais un interrupteur dans Gladys : aucune commande vocale, aucune scène « tout éteindre » ne peut la déverrouiller.",
+        "de": "Gladys kann immer verriegeln. Entriegeln ist standardmäßig aus: Einmal erlaubt, kann jeder, der deine Gladys-Dashboards oder -Szenen nutzt, die Tür öffnen. Ein Schloss ist in Gladys nie ein Schalter: Kein Sprachbefehl, keine „alles ausschalten“-Szene kann es entriegeln.",
+        "es": "Gladys siempre puede bloquear. El desbloqueo está desactivado por defecto: una vez permitido, quien use sus paneles o escenas de Gladys puede abrir la puerta. Una cerradura nunca es un interruptor en Gladys: ningún comando de voz ni escena «apagar todo» puede desbloquearla."
+      }
+    },
+    {
+      "key": "allow_unlock",
+      "type": "boolean",
+      "label": {
+        "en": "Allow unlocking from Gladys",
+        "fr": "Autoriser le déverrouillage depuis Gladys",
+        "de": "Entriegeln über Gladys erlauben",
+        "es": "Permitir desbloquear desde Gladys"
+      },
+      "description": {
+        "en": "Off: the widget and the scenes can lock, never unlock. On: the widget (after a confirmation) and the scenes can unlock.",
+        "fr": "Désactivé : le widget et les scènes peuvent verrouiller, jamais déverrouiller. Activé : le widget (après confirmation) et les scènes peuvent déverrouiller.",
+        "de": "Aus: Widget und Szenen können verriegeln, nie entriegeln. An: Das Widget (nach einer Bestätigung) und die Szenen können entriegeln.",
+        "es": "Desactivado: el widget y las escenas pueden bloquear, nunca desbloquear. Activado: el widget (tras una confirmación) y las escenas pueden desbloquear."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "refresh_interval",
+      "type": "select",
+      "label": {
+        "en": "Reading of the locks",
+        "fr": "Lecture des serrures",
+        "de": "Abfrage der Schlösser",
+        "es": "Lectura de las cerraduras"
+      },
+      "description": {
+        "en": "How often the locks are read when real-time events are unavailable. With them, every 30 minutes only.",
+        "fr": "Fréquence de lecture des serrures quand les événements en temps réel sont indisponibles. Avec eux, toutes les 30 minutes seulement.",
+        "de": "Wie oft die Schlösser gelesen werden, wenn keine Echtzeit-Ereignisse ankommen. Mit ihnen nur alle 30 Minuten.",
+        "es": "Frecuencia de lectura de las cerraduras cuando no hay eventos en tiempo real. Con ellos, solo cada 30 minutos."
+      },
+      "required": false,
+      "default": "5",
+      "options": [
+        {
+          "value": "1",
+          "label": {
+            "en": "Every minute",
+            "fr": "Toutes les minutes",
+            "de": "Jede Minute",
+            "es": "Cada minuto"
+          }
+        },
+        {
+          "value": "5",
+          "label": {
+            "en": "Every 5 minutes",
+            "fr": "Toutes les 5 minutes",
+            "de": "Alle 5 Minuten",
+            "es": "Cada 5 minutos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "Every 15 minutes",
+            "fr": "Toutes les 15 minutes",
+            "de": "Alle 15 Minuten",
+            "es": "Cada 15 minutos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "Every 30 minutes",
+            "fr": "Toutes les 30 minutes",
+            "de": "Alle 30 Minuten",
+            "es": "Cada 30 minutos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names and texts",
+        "fr": "Langue des noms et des textes",
+        "de": "Sprache der Namen und Texte",
+        "es": "Idioma de los nombres y textos"
+      },
+      "description": {
+        "en": "Names of the features (kept by Gladys once a device is added) and texts of the last method and of the scene triggers.",
+        "fr": "Noms des fonctionnalités (gardés par Gladys une fois l'appareil ajouté) et textes de la dernière méthode et des déclencheurs de scène.",
+        "de": "Namen der Funktionen (von Gladys nach dem Hinzufügen behalten) und Texte der letzten Methode und der Szenenauslöser.",
+        "es": "Nombres de las funciones (Gladys los conserva al añadir el dispositivo) y textos del último método y de los disparadores de escena."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "English",
+            "de": "English",
+            "es": "English"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "Français",
+            "fr": "Français",
+            "de": "Français",
+            "es": "Français"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "Deutsch",
+            "fr": "Deutsch",
+            "de": "Deutsch",
+            "es": "Deutsch"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Español",
+            "fr": "Español",
+            "de": "Español",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
+      "key": "send_code",
+      "label": {
+        "en": "Send the code",
+        "fr": "Envoyer le code",
+        "de": "Code senden",
+        "es": "Enviar el código"
+      },
+      "description": {
+        "en": "Asks the cloud for a verification code, sent to the e-mail address or phone number of the account.",
+        "fr": "Demande au cloud un code de vérification, envoyé à l'adresse e-mail ou au numéro du compte.",
+        "de": "Fordert bei der Cloud einen Bestätigungscode an, gesendet an die E-Mail-Adresse oder Telefonnummer des Kontos.",
+        "es": "Pide a la nube un código de verificación, enviado al correo o al número de la cuenta."
+      },
+      "timeout_seconds": 60
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "enter_code",
+      "label": {
+        "en": "Enter the code",
+        "fr": "Saisir le code",
+        "de": "Code eingeben",
+        "es": "Introducir el código"
+      },
+      "description": {
+        "en": "Validates this Gladys with the code received. Valid a few minutes: send a new one if needed.",
+        "fr": "Valide ce Gladys avec le code reçu. Valable quelques minutes : envoyez-en un nouveau si besoin.",
+        "de": "Bestätigt dieses Gladys mit dem erhaltenen Code. Wenige Minuten gültig: Lass bei Bedarf einen neuen senden.",
+        "es": "Valida este Gladys con el código recibido. Válido unos minutos: pida uno nuevo si hace falta."
+      },
+      "timeout_seconds": 60,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "key": "code",
+          "type": "string",
+          "label": {
+            "en": "Code",
+            "fr": "Code",
+            "de": "Code",
+            "es": "Código"
+          },
+          "placeholder": {
+            "en": "123456",
+            "fr": "123456",
+            "de": "123456",
+            "es": "123456"
+          },
           "required": true
         }
       ]
+    },
+    {
+      "key": "lock_now",
+      "label": {
+        "en": "Lock a lock",
+        "fr": "Verrouiller une serrure",
+        "de": "Ein Schloss verriegeln",
+        "es": "Bloquear una cerradura"
+      },
+      "description": {
+        "en": "Locks the chosen lock now, through its bridge.",
+        "fr": "Verrouille la serrure choisie maintenant, via son pont.",
+        "de": "Verriegelt das gewählte Schloss jetzt, über seine Bridge.",
+        "es": "Bloquea ahora la cerradura elegida, a través de su puente."
+      },
+      "timeout_seconds": 70,
+      "fields": [
+        {
+          "key": "lock",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Lock",
+            "fr": "Serrure",
+            "de": "Schloss",
+            "es": "Cerradura"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads the locks of the account. Nothing is locked or unlocked.",
+        "fr": "Lit les serrures du compte. Rien n'est verrouillé ni déverrouillé.",
+        "de": "Liest die Schlösser des Kontos. Nichts wird verriegelt oder entriegelt.",
+        "es": "Lee las cerraduras de la cuenta. No se bloquea ni se desbloquea nada."
+      },
+      "timeout_seconds": 90
+    },
+    {
+      "key": "sign_out",
+      "label": {
+        "en": "Sign out",
+        "fr": "Se déconnecter",
+        "de": "Abmelden",
+        "es": "Cerrar sesión"
+      },
+      "description": {
+        "en": "Deletes the token and this installation: a new code will be needed. The devices stay, without new values.",
+        "fr": "Supprime le jeton et cette installation : un nouveau code sera nécessaire. Les appareils restent, sans nouvelle valeur.",
+        "de": "Löscht das Token und diese Installation: Ein neuer Code wird nötig. Die Geräte bleiben, ohne neue Werte.",
+        "es": "Borra el token y esta instalación: hará falta un código nuevo. Los dispositivos se mantienen, sin nuevos valores."
+      },
+      "timeout_seconds": 30
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "door_unlocked",
+      "label": {
+        "en": "Yale lock unlocked",
+        "fr": "Serrure Yale déverrouillée",
+        "de": "Yale-Schloss entriegelt",
+        "es": "Cerradura Yale desbloqueada"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A lock was unlocked, with who did it and how (keypad, fingerprint, app, by hand…), as the Yale activity feed says.",
+        "fr": "Une serrure a été déverrouillée, avec qui l'a fait et comment (clavier, empreinte, appli, à la main…), d'après l'historique Yale.",
+        "de": "Ein Schloss wurde entriegelt, mit wer es war und wie (Tastatur, Fingerabdruck, App, von Hand…), laut Yale-Verlauf.",
+        "es": "Se desbloqueó una cerradura, con quién lo hizo y cómo (teclado, huella, app, a mano…), según el historial de Yale."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "lock",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Lock (empty: any)",
+            "fr": "Serrure (vide : toutes)",
+            "de": "Schloss (leer: alle)",
+            "es": "Cerradura (vacío: todas)"
+          }
         },
         {
-          "key": "target",
+          "key": "method",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": {
+            "en": "How (empty: any)",
+            "fr": "Comment (vide : tous)",
+            "de": "Wie (leer: alle)",
+            "es": "Cómo (vacío: todos)"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "remote",
+              "label": {
+                "en": "App (remote)",
+                "fr": "Appli (à distance)",
+                "de": "App (aus der Ferne)",
+                "es": "App (a distancia)"
+              }
+            },
+            {
+              "value": "bluetooth",
+              "label": {
+                "en": "App (Bluetooth)",
+                "fr": "Appli (Bluetooth)",
+                "de": "App (Bluetooth)",
+                "es": "App (Bluetooth)"
+              }
+            },
+            {
+              "value": "keypad",
+              "label": {
+                "en": "Keypad",
+                "fr": "Clavier",
+                "de": "Tastatur",
+                "es": "Teclado"
+              }
+            },
+            {
+              "value": "fingerprint",
+              "label": {
+                "en": "Fingerprint",
+                "fr": "Empreinte",
+                "de": "Fingerabdruck",
+                "es": "Huella"
+              }
+            },
+            {
+              "value": "manual",
+              "label": {
+                "en": "By hand",
+                "fr": "À la main",
+                "de": "Von Hand",
+                "es": "A mano"
+              }
+            },
+            {
+              "value": "auto",
+              "label": {
+                "en": "Automatic",
+                "fr": "Automatique",
+                "de": "Automatisch",
+                "es": "Automático"
+              }
+            },
+            {
+              "value": "tag",
+              "label": {
+                "en": "Key tag or card",
+                "fr": "Badge ou carte",
+                "de": "Chip oder Karte",
+                "es": "Llavero o tarjeta"
+              }
+            },
+            {
+              "value": "homekey",
+              "label": {
+                "en": "Home Key",
+                "fr": "Home Key",
+                "de": "Home Key",
+                "es": "Home Key"
+              }
+            },
+            {
+              "value": "other",
+              "label": {
+                "en": "Other",
+                "fr": "Autre",
+                "de": "Andere",
+                "es": "Otro"
+              }
+            }
+          ]
+        },
+        {
+          "key": "user",
+          "type": "string",
+          "label": {
+            "en": "User, as in the app (empty: any)",
+            "fr": "Utilisateur, comme dans l'appli (vide : tous)",
+            "de": "Benutzer wie in der App (leer: alle)",
+            "es": "Usuario, como en la app (vacío: todos)"
+          },
+          "placeholder": {
+            "en": "First and last name",
+            "fr": "Prénom et nom",
+            "de": "Vor- und Nachname",
+            "es": "Nombre y apellido"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "lock_name",
+          "type": "string",
+          "label": {
+            "en": "Lock name",
+            "fr": "Nom de la serrure",
+            "de": "Name des Schlosses",
+            "es": "Nombre de la cerradura"
+          }
+        },
+        {
+          "key": "user",
+          "type": "string",
+          "label": {
+            "en": "User",
+            "fr": "Utilisateur",
+            "de": "Benutzer",
+            "es": "Usuario"
+          }
+        },
+        {
+          "key": "method",
+          "type": "string",
+          "label": {
+            "en": "Method (key)",
+            "fr": "Méthode (clé)",
+            "de": "Methode (Schlüssel)",
+            "es": "Método (clave)"
+          }
+        },
+        {
+          "key": "method_label",
+          "type": "string",
+          "label": {
+            "en": "Method",
+            "fr": "Méthode",
+            "de": "Methode",
+            "es": "Método"
+          }
+        }
+      ]
+    },
+    {
+      "key": "door_left_open",
+      "label": {
+        "en": "Door left open",
+        "fr": "Porte restée ouverte",
+        "de": "Tür offen gelassen",
+        "es": "Puerta dejada abierta"
+      },
+      "description": {
+        "en": "The door of a lock with DoorSense has stayed open for the chosen time.",
+        "fr": "La porte d'une serrure équipée de DoorSense est restée ouverte pendant la durée choisie.",
+        "de": "Die Tür eines Schlosses mit DoorSense ist die gewählte Zeit offen geblieben.",
+        "es": "La puerta de una cerradura con DoorSense ha permanecido abierta el tiempo elegido."
+      },
+      "fields": [
+        {
+          "key": "lock",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Lock (empty: any)",
+            "fr": "Serrure (vide : toutes)",
+            "de": "Schloss (leer: alle)",
+            "es": "Cerradura (vacío: todas)"
+          }
+        },
+        {
+          "key": "minutes",
+          "type": "select",
+          "label": {
+            "en": "Open for",
+            "fr": "Ouverte depuis",
+            "de": "Offen seit",
+            "es": "Abierta desde hace"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "en": "1 minute",
+                "fr": "1 minute",
+                "de": "1 Minute",
+                "es": "1 minuto"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "2 minutes",
+                "fr": "2 minutes",
+                "de": "2 Minuten",
+                "es": "2 minutos"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "5 minutes",
+                "fr": "5 minutes",
+                "de": "5 Minuten",
+                "es": "5 minutos"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10 minutes",
+                "fr": "10 minutes",
+                "de": "10 Minuten",
+                "es": "10 minutos"
+              }
+            },
+            {
+              "value": "15",
+              "label": {
+                "en": "15 minutes",
+                "fr": "15 minutes",
+                "de": "15 Minuten",
+                "es": "15 minutos"
+              }
+            },
+            {
+              "value": "30",
+              "label": {
+                "en": "30 minutes",
+                "fr": "30 minutes",
+                "de": "30 Minuten",
+                "es": "30 minutos"
+              }
+            },
+            {
+              "value": "60",
+              "label": {
+                "en": "1 hour",
+                "fr": "1 heure",
+                "de": "1 Stunde",
+                "es": "1 hora"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "lock_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Lock name",
+            "fr": "Nom de la serrure",
+            "de": "Name des Schlosses",
+            "es": "Nombre de la cerradura"
+          }
+        },
+        {
+          "key": "minutes",
+          "type": "string",
+          "label": {
+            "en": "Minutes",
+            "fr": "Minutes",
+            "de": "Minuten",
+            "es": "Minutos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "battery_low",
+      "label": {
+        "en": "Yale battery low",
+        "fr": "Batterie Yale faible",
+        "de": "Yale-Batterie schwach",
+        "es": "Batería Yale baja"
+      },
+      "description": {
+        "en": "The batteries of a lock fell below 20 %, or those of its keypad are low. Once per drop.",
+        "fr": "Les piles d'une serrure sont passées sous 20 %, ou celles de son clavier sont faibles. Une fois par baisse.",
+        "de": "Die Batterien eines Schlosses sind unter 20 % gefallen oder die seiner Tastatur sind schwach. Einmal pro Abfall.",
+        "es": "Las pilas de una cerradura bajaron del 20 %, o las de su teclado están bajas. Una vez por bajada."
+      },
+      "fields": [
+        {
+          "key": "lock",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Lock (empty: any)",
+            "fr": "Serrure (vide : toutes)",
+            "de": "Schloss (leer: alle)",
+            "es": "Cerradura (vacío: todas)"
+          }
+        },
+        {
+          "key": "part",
+          "type": "multi_select",
+          "label": {
+            "en": "Which batteries (empty: any)",
+            "fr": "Quelles piles (vide : toutes)",
+            "de": "Welche Batterien (leer: alle)",
+            "es": "Qué pilas (vacío: todas)"
+          },
+          "options": [
+            {
+              "value": "lock",
+              "label": {
+                "en": "Lock",
+                "fr": "Serrure",
+                "de": "Schloss",
+                "es": "Cerradura"
+              }
+            },
+            {
+              "value": "keypad",
+              "label": {
+                "en": "Keypad",
+                "fr": "Clavier",
+                "de": "Tastatur",
+                "es": "Teclado"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "lock_name",
+          "type": "string",
+          "label": {
+            "en": "Lock name",
+            "fr": "Nom de la serrure",
+            "de": "Name des Schlosses",
+            "es": "Nombre de la cerradura"
+          }
+        },
+        {
+          "key": "part",
+          "type": "string",
+          "label": {
+            "en": "Which batteries",
+            "fr": "Quelles piles",
+            "de": "Welche Batterien",
+            "es": "Qué pilas"
+          }
+        },
+        {
+          "key": "level",
+          "type": "number",
+          "label": {
+            "en": "Lock battery (%)",
+            "fr": "Batterie de la serrure (%)",
+            "de": "Schlossbatterie (%)",
+            "es": "Batería de la cerradura (%)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "lock_door",
+      "label": {
+        "en": "Lock a Yale lock",
+        "fr": "Verrouiller une serrure Yale",
+        "de": "Yale-Schloss verriegeln",
+        "es": "Bloquear una cerradura Yale"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Locks the chosen lock through its bridge. Output: locked, or jammed.",
+        "fr": "Verrouille la serrure choisie via son pont. Sortie : locked (verrouillée) ou jammed (bloquée).",
+        "de": "Verriegelt das gewählte Schloss über seine Bridge. Ausgabe: locked (verriegelt) oder jammed (blockiert).",
+        "es": "Bloquea la cerradura elegida a través de su puente. Salida: locked (bloqueada) o jammed (atascada)."
+      },
+      "timeout_seconds": 70,
       "fields": [
         {
-          "key": "device",
+          "key": "lock",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Lock",
+            "fr": "Serrure",
+            "de": "Schloss",
+            "es": "Cerradura"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State reached",
+            "fr": "État atteint",
+            "de": "Erreichter Zustand",
+            "es": "Estado alcanzado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "unlock_door",
+      "label": {
+        "en": "Unlock a Yale lock",
+        "fr": "Déverrouiller une serrure Yale",
+        "de": "Yale-Schloss entriegeln",
+        "es": "Desbloquear una cerradura Yale"
+      },
+      "description": {
+        "en": "Unlocks the chosen lock, only if unlocking from Gladys is allowed in the configuration (off by default).",
+        "fr": "Déverrouille la serrure choisie, seulement si le déverrouillage depuis Gladys est autorisé dans la configuration (désactivé par défaut).",
+        "de": "Entriegelt das gewählte Schloss, nur wenn Entriegeln über Gladys in der Konfiguration erlaubt ist (standardmäßig aus).",
+        "es": "Desbloquea la cerradura elegida, solo si el desbloqueo desde Gladys está permitido en la configuración (desactivado por defecto)."
+      },
+      "timeout_seconds": 70,
+      "fields": [
+        {
+          "key": "lock",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Lock",
+            "fr": "Serrure",
+            "de": "Schloss",
+            "es": "Cerradura"
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State reached",
+            "fr": "État atteint",
+            "de": "Erreichter Zustand",
+            "es": "Estado alcanzado"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "lock",
+      "label": {
+        "en": "Yale lock",
+        "fr": "Serrure Yale",
+        "de": "Yale-Schloss",
+        "es": "Cerradura Yale"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "State, door, battery and last user of a lock, with a lock button.",
+        "fr": "État, porte, batterie et dernier utilisateur d'une serrure, avec un bouton verrouiller.",
+        "de": "Zustand, Tür, Batterie und letzter Benutzer eines Schlosses, mit Verriegeln-Taste.",
+        "es": "Estado, puerta, batería y último usuario de una cerradura, con botón de bloqueo."
+      },
+      "icon": "lock",
+      "settings": [
+        {
+          "key": "lock",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Lock (empty: the only one)",
+            "fr": "Serrure (vide : la seule)",
+            "de": "Schloss (leer: das einzige)",
+            "es": "Cerradura (vacío: la única)"
+          }
+        }
+      ],
+      "action_timeout_seconds": 70
     }
   ]
 }

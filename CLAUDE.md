@@ -11,6 +11,9 @@ Gladys through
 [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
 its only runtime dependency. It started from the official JavaScript template.
 
+This one follows **Yale and August smart locks** over the Yale Home / August
+cloud (the protocol of the yalexs library), see "Yale Home" at the end.
+
 ## Commands
 
 ```bash
@@ -31,16 +34,29 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only (src/app.js), graceful shutdown
+src/app.js                        every SDK handler -> the hub; manifest actions (ACTIONS)
+src/hub.js                        the account: sign-in and code, timer, reads, real time,
+                                  states, scene triggers, commands, connection status, logs
+src/yale/brands.js                the three clouds (Yale Home, Yale Access, August): URLs,
+                                  headers, public application keys, PubNub keys
+src/yale/client.js                REST API (session, code, locks, details, activities,
+                                  remote operations), error kinds (ERROR_KINDS)
+src/yale/model.js                 cloud answers -> plain objects: locks, details, activities,
+                                  pushed messages, methods (METHODS)
+src/yale/pubnub.js                PubNub subscribe long poll, without the PubNub SDK
+src/yale/http.js                  the HTTP seam (fetch); the tests replace it
+src/devices.js                    Gladys devices and feature values, pure functions
+src/scenes.js, src/widgets.js     scene actions lock_door / unlock_door, widget `lock`
+src/texts.js                      every user-facing text, en/fr/de/es
+src/issues.js                     a repeated failure logged once (from gladys-subsonic)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+src/store.js                      /data/yale-state.json (installation id, token…)
+scripts/probe.mjs                 read-only probe of the real clouds (run where the network allows)
+gladys-assistant-integration.json manifest
+docs/{en,fr,de,es}.md             user documentation, same sections (test/i18n.test.js)
+test/                             node --test; fixtures/yale = yalexs and Home Assistant answers,
+                                  helpers/fakeCloud.js = fake cloud + PubNub, helpers/world.js
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +86,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, manifest texts, feature names,
+  widget texts and `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +250,64 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Yale Home (propre à cette intégration)
+
+- **Clé d'application : le point bloquant.** Le cloud n'accepte que les requêtes portant la clé
+  d'une application connue (`x-api-key` / `x-august-api-key`). Les clés publiques des applis,
+  publiées par yalexs (MIT), sont dans `src/yale/brands.js`. Le README de yalexs (2026) dit
+  qu'aucun des deux clouds ne les accepte plus : Yale Home n'accepte que des clés de partenaires
+  depuis janvier 2025 (réponse du service client relayée dans yalexs#167 : « no plans to make API
+  keys publicly available again »), August exigerait aussi une clé de partenaire ; yalexs a retiré
+  la configuration `YALE_HOME` en juin 2026 (commit 389ae6c). Home Assistant (`yale` et `august`)
+  est passé à l'OAuth avec des identifiants détenus par Nabu Casa (`account-link.nabucasa.com`),
+  réservés à HA : **ne jamais les imiter**. L'intégration distingue donc un **403 sur `/session`**
+  (clé refusée, `ERROR_KINDS.APP_KEY`, statut dédié) d'un **401 / `vPassword: false`** (compte
+  refusé). Les deux bloquent les essais jusqu'au prochain changement de configuration, pour ne
+  pas faire verrouiller le compte. Champ `api_key` (secret, vide par défaut) pour une clé fournie
+  par Yale. `scripts/probe.mjs` tranche depuis une machine qui a le réseau : la session de code
+  n'y a pas accès (proxy : `PROXY_403`).
+- **Connexion** (yalexs `authenticator_common.py`) : `POST /session { installId, identifier:
+"email:…" | "phone:+33…", password }` → jeton dans l'en-tête `x-access-token` ou
+  `x-august-access-token`, corps `{ expiresAt, vPassword, vInstallId }`. `vInstallId: false` : la
+  première fois, l'installation doit être validée par un code (`POST /validation/<méthode>`, puis
+  `POST /validate/<méthode> { <méthode>: …, code }`), puis nouvelle session. L'`installId` est
+  gardé dans `/data` : redémarrage, jeton expiré ou renouvelé ne redemandent pas de code. Pas
+  d'envoi automatique du code (on ne spamme pas l'utilisateur à chaque redémarrage) : actions
+  `send_code` et `enter_code`. Le jeton dure des mois ; renouvelé à moins de 7 jours de
+  l'expiration par un `GET /users/houses/mine` dont la réponse porte un nouveau jeton.
+- **Lectures** : `/users/me` (UserID, pour PubNub), `/users/locks/mine` (seulement les serrures
+  `UserType: superuser`, comme HA : un invité ne lit pas le détail), `/locks/{id}` (état daté,
+  `doorState`, `battery` 0–1 ou −1 inconnu, `Bridge.status.current` ou `operative`, `keypad.
+batteryLevel` en texte « Low »/« Medium », `batteryInfo.warningState` sur les réponses Yale
+  Home récentes, `pubsubChannel`, `users`), `/houses/{id}/activities?limit=10` avec
+  `Accept-Version: 4.0.0`. Deux formats d'activité coexistent : ancien (`dateTime`,
+  `callingUser`, `info.remote/keypad/manual`) et v4 (`timestamp`, `user`, action explicite
+  `pin_unlock`, `finger_unlock`…). Un « lock » nu avec `info.crypto` vient d'un téléphone en
+  Bluetooth. **Jamais** l'endpoint `status?intent=wakeup` : il réveille la serrure et vide les
+  piles (yalexs le limite à un appel par 26 minutes).
+- **États** : chaque source est datée (détail `LockStatus.dateTime`, activité, message poussé) ;
+  la plus récente gagne. `doorState: "init"` = DoorSense absent ou non calibré : pas de
+  fonctionnalité Porte. Porte : **0 ouverte, 1 fermée** (opening-sensor). Une serrure sans pont
+  est hors ligne et ne se manœuvre pas à distance.
+- **Temps réel** : PubNub, protocole brut (pas de SDK) : `GET https://ps.pndsn.com/v2/subscribe/
+<clé>/<canaux>/0?tt=<timetoken>&tr=<région>&uuid=pn-<USERID>` ; `tt=0` répond aussitôt, les
+  suivants attendent jusqu'à ~280 s. Clés de souscription par marque dans `brands.js` (celle de
+  Yale Home peut être révoquée : Yale Global est passé aux WebSockets, réservés à l'OAuth). Un
+  message `info.action: "status"` n'est pas une opération ; l'utilisateur n'est nommé que si le
+  message a son heure (`info.startTime`). Après chaque message, lecture des activités à 4 s et
+  30 s pour savoir qui et comment. Avec le temps réel, relecture toutes les 30 min ; sans, au
+  rythme `refresh_interval`.
+- **Sécurité** : aucune fonctionnalité inscriptible (pas de `lock/binary` : un interrupteur
+  ouvrirait la porte à la voix ou par une scène « tout éteindre ») ; verrouiller par le widget,
+  l'action de scène `lock_door` ou l'action `lock_now` ; déverrouiller seulement si
+  `allow_unlock` (faux par défaut), bouton rouge avec `confirm: true`. Commandes : `PUT
+/remoteoperate/{id}/lock|unlock` synchrones (jusqu'à 60 s ; 422 pont hors ligne, 423 occupé,
+  408 délai), d'où des `timeout_seconds` de 70.
+- **Déclencheurs** : `door_unlocked` vient de l'historique (une activité vue la première fois au
+  démarrage ou avec plus de 10 min de retard ne déclenche rien) ; `door_left_open` émet un
+  événement par palier (`LEFT_OPEN_MINUTES`) car le cœur ne filtre que par égalité ;
+  `battery_low` une fois par baisse (sous 20 %, réarmé au-dessus de 25 %), mémorisé dans `/data`.
+- **Fetch derrière un proxy** : l'erreur de `fetch` enveloppe un `DOMException` dont `code` vaut
+  **0** (numérique) : `networkCode()` ne garde que les codes texte et reconnaît « Proxy response
+  (403) » (`PROXY_403`).

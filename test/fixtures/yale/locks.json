@@ -1,0 +1,16 @@
+{
+  "A6697750D607098BAE8D6BAA11EF8063": {
+    "LockName": "Front Door Lock",
+    "UserType": "superuser",
+    "macAddress": "02:00:00:00:00:01",
+    "HouseID": "000000000000",
+    "HouseName": "A House"
+  },
+  "A6697750D607098BAE8D6BAA11EF9999": {
+    "LockName": "Back Door Lock",
+    "UserType": "user",
+    "macAddress": "02:00:00:00:00:02",
+    "HouseID": "000000000011",
+    "HouseName": "A House"
+  }
+}

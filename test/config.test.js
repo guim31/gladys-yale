@@ -1,33 +1,59 @@
+// -----------------------------------------------------------------------------
+// Normalization of the configuration.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { accountOf, normalizeConfig, normalizeUsername } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('defaults for an empty configuration', () => {
+  assert.deepEqual(normalizeConfig({}), {
+    brand: 'yale_home',
+    loginMethod: 'email',
+    username: '',
+    password: '',
+    apiKey: '',
+    allowUnlock: false,
+    refreshMs: 5 * 60_000,
+    language: 'fr',
+  });
+  assert.deepEqual(normalizeConfig(null), normalizeConfig({}));
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('values are checked against their options', () => {
+  const config = normalizeConfig({
+    brand: 'august',
+    login_method: 'phone',
+    username: ' +33 6 12-34-56 78 ',
+    password: '  spaces kept  ',
+    api_key: ' key ',
+    allow_unlock: 'true',
+    refresh_interval: '15',
+    language: 'de',
+  });
+  assert.equal(config.brand, 'august');
+  assert.equal(config.username, '+33612345678');
+  assert.equal(config.password, '  spaces kept  ', 'a password is never trimmed');
+  assert.equal(config.apiKey, 'key');
+  assert.equal(config.allowUnlock, true);
+  assert.equal(config.refreshMs, 15 * 60_000);
+  assert.equal(config.language, 'de');
+  const wrong = normalizeConfig({
+    brand: 'nest',
+    refresh_interval: '2',
+    language: 'it',
+    allow_unlock: 'no',
+  });
+  assert.equal(wrong.brand, 'yale_home');
+  assert.equal(wrong.refreshMs, 5 * 60_000);
+  assert.equal(wrong.language, 'fr');
+  assert.equal(wrong.allowUnlock, false);
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
-});
-
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('an e-mail address is kept as typed; the account ignores its case', () => {
+  assert.equal(normalizeUsername(' Name@Example.com ', 'email'), 'Name@Example.com');
+  const a = normalizeConfig({ username: 'Name@Example.com', password: 'x' });
+  const b = normalizeConfig({ username: 'name@example.com', password: 'y' });
+  assert.equal(accountOf(a), accountOf(b), 'a new password is the same account');
+  assert.notEqual(accountOf(a), accountOf({ ...a, brand: 'august' }));
 });

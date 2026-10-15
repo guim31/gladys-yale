@@ -1,0 +1,102 @@
+{
+  "unlatching_remote": {
+    "remoteEvent": 1,
+    "status": "kAugLockState_Unlatching",
+    "info": {
+      "action": "unlock",
+      "startTime": "2021-03-20T18:19:05.373Z",
+      "context": {
+        "transactionID": "_oJRZKJsx",
+        "startDate": "2021-03-20T18:19:05.371Z",
+        "retryCount": 1
+      },
+      "lockType": "lock_version_1001",
+      "serialNumber": "TEST0SERIAL9",
+      "rssi": -53,
+      "wlanRSSI": -55,
+      "wlanSNR": 44,
+      "duration": 2534
+    }
+  },
+  "jammed": {
+    "remoteEvent": 1,
+    "status": "FAILED_BRIDGE_ERROR_LOCK_JAMMED",
+    "info": {
+      "action": "unlock",
+      "startTime": "2021-03-20T18:19:05.373Z",
+      "context": {
+        "transactionID": "_oJRZKJsx",
+        "startDate": "2021-03-20T18:19:05.371Z",
+        "retryCount": 1
+      },
+      "lockType": "lock_version_1001",
+      "serialNumber": "TEST0SERIAL9",
+      "rssi": -53,
+      "wlanRSSI": -55,
+      "wlanSNR": 44,
+      "duration": 2534
+    }
+  },
+  "locked_door_open": {
+    "status": "locked",
+    "callingUserID": "8918341e-7e68-4079-ad0a-1fa8a45d855b",
+    "doorState": "open"
+  },
+  "unlocked_by_user": {
+    "status": "unlocked",
+    "callingUserID": "cccca94e-373e-aaaa-bbbb-333396827777",
+    "doorState": "closed",
+    "info": {
+      "action": "unlock",
+      "startTime": "2021-03-20T18:19:05.373Z",
+      "context": {
+        "transactionID": "_oJRZKJsx",
+        "startDate": "2021-03-20T18:19:05.371Z",
+        "retryCount": 1
+      },
+      "lockType": "lock_version_1001",
+      "serialNumber": "TEST0SERIAL9",
+      "rssi": -53,
+      "wlanRSSI": -55,
+      "wlanSNR": 44,
+      "duration": 2534
+    }
+  },
+  "manual_unlock_door_open": {
+    "status": "unlocked",
+    "callingUserID": "manualunlock",
+    "doorState": "open"
+  },
+  "status_poll": {
+    "status": "kAugLockState_Locked",
+    "info": {
+      "action": "status",
+      "startTime": "2021-03-20T18:19:05.373Z",
+      "context": {
+        "transactionID": "RP99lHGUIx",
+        "startDate": "2021-03-20T18:19:05.371Z",
+        "retryCount": 1
+      }
+    }
+  },
+  "door_state_changed": {
+    "status": "DoorStateChanged",
+    "lockID": "xxx",
+    "timeStamp": 1615087688187
+  },
+  "door_init": {
+    "doorState": "init",
+    "lockID": "xxx",
+    "timeStamp": 1615087688187
+  },
+  "bridge_offline": {
+    "status": "associated_bridge_offline",
+    "lockID": "xxx",
+    "timeStamp": 1615087688187
+  },
+  "bridge_online": {
+    "status": "associated_bridge_online",
+    "lockID": "xxx",
+    "timeStamp": 1615087688187
+  }
+}
